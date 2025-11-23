@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPU算力计算器</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* 全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 头部样式 */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* 主要内容区域 */
+        main {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        /* 控制面板样式 */
+        .controls {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: flex-end;
+        }
+
+        .control-group {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .control-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .control-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* 选择控制按钮样式 */
+        .select-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .btn-small:hover {
+            background: #e1e5e9;
+            transform: translateY(-1px);
+        }
+
+        /* 复选框容器样式 */
+        .checkbox-container {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 12px;
+            background: white;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px 0;
+        }
+
+        .checkbox-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .checkbox-item:hover {
+            background: #f8f9fa;
+            padding-left: 4px;
+            border-radius: 4px;
+        }
+
+        /* 按钮样式 */
+        .btn-primary,
+        .btn-secondary,
+        .btn-reset {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #4BC0C0;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #45b7b8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(75, 192, 192, 0.4);
+        }
+
+        .btn-reset {
+            background: #f0f0f0;
+            color: #666;
+            border: 2px solid #e1e5e9;
+        }
+
+        .btn-reset:hover {
+            background: #e1e5e9;
+            transform: translateY(-2px);
+        }
+
+        /* 结果卡片样式 */
+        .results {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .result-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .card-header h3 {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .card-header .architecture {
+            font-size: 0.9rem;
+            color: #666;
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .spec-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .spec-row:last-child {
+            border-bottom: none;
+        }
+
+        .spec-row .label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .spec-row .value {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .performance-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .performance-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .performance-item .precision {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .performance-item .value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .performance-item .tensor {
+            font-size: 0.8rem;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        /* 图表区域样式 */
+        .charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 20px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-container h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .chart-container canvas {
+            flex: 1;
+            width: 100% !important;
+            height: 350px !important;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn-primary,
+            .btn-secondary,
+            .btn-reset {
+                width: 100%;
+                margin-right: 0;
+            }
+
+            .result-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .charts {
+                grid-template-columns: 1fr;
+            }
+
+            .performance-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            .control-group {
+                min-width: 100%;
+            }
+
+            .chart-container {
+                min-height: 300px;
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-card {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .result-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .result-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .result-card:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .result-card:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        .result-card:nth-child(5) {
+            animation-delay: 0.5s;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>GPU算力计算器</h1>
+            <p>计算和对比不同GPU型号在各种精度下的算力</p>
+        </header>
+
+        <main>
+            <section class="controls">
+                <div class="control-group">
+                    <label>选择GPU型号:</label>
+                    <div class="select-controls">
+                        <button id="select-all-gpus" class="btn-small">全选</button>
+                        <button id="select-none-gpus" class="btn-small">全不选</button>
+                    </div>
+                    <div id="gpu-models-container" class="checkbox-container">
+                        <!-- 选项将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>选择计算精度:</label>
+                    <div class="select-controls">
+                        <button id="select-all-precisions" class="btn-small">全选</button>
+                        <button id="select-none-precisions" class="btn-small">全不选</button>
+                    </div>
+                    <div id="precision-types-container" class="checkbox-container">
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="precision" value="FP32" checked>
+                            <span>FP32 (单精度)</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="precision" value="FP64" checked>
+                            <span>FP64 (双精度)</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="precision" value="FP16" checked>
+                            <span>FP16 (半精度)</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="precision" value="BF16" checked>
+                            <span>BF16 (脑浮点数)</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="precision" value="INT8" checked>
+                            <span>INT8 (整数)</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="precision" value="INT4" checked>
+                            <span>INT4 (整数)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <button id="calculate-btn" class="btn-primary">计算算力</button>
+                    <button id="compare-btn" class="btn-secondary">对比选中GPU</button>
+                    <button id="reset-btn" class="btn-reset">重置</button>
+                </div>
+            </section>
+
+            <section class="results">
+                <div class="result-cards" id="result-cards">
+                    <!-- 计算结果将通过JavaScript动态生成 -->
+                </div>
+            </section>
+
+            <section class="charts">
+                <div class="chart-container">
+                    <h3>算力对比柱状图</h3>
+                    <canvas id="bar-chart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h3>算力对比雷达图</h3>
+                    <canvas id="radar-chart"></canvas>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        /**
+         * GPU核心数据存储
+         * 包含各种GPU型号的CUDA Core、Tensor Core数量和架构信息
+         */
+        const GPU_DATA = {
+            "A100": {
+                name: "NVIDIA A100",
+                architecture: "Ampere",
+                cudaCores: 6912,
+                tensorCores: 432,
+                baseClock: 1.410, // GHz
+                boostClock: 1.700, // GHz
+                memory: "80GB HBM2e",
+                memoryBandwidth: 2039 // GB/s
+            },
+            "H100": {
+                name: "NVIDIA H100",
+                architecture: "Hopper",
+                cudaCores: 16896,
+                tensorCores: 132,
+                baseClock: 1.080, // GHz
+                boostClock: 1.700, // GHz
+                memory: "80GB HBM3",
+                memoryBandwidth: 3350 // GB/s
+            },
+            "H200": {
+                name: "NVIDIA H200",
+                architecture: "Hopper",
+                cudaCores: 16896,
+                tensorCores: 132,
+                baseClock: 1.080, // GHz
+                boostClock: 1.700, // GHz
+                memory: "160GB HBM3e",
+                memoryBandwidth: 4800 // GB/s
+            },
+            "A40": {
+                name: "NVIDIA A40",
+                architecture: "Ampere",
+                cudaCores: 10752,
+                tensorCores: 672,
+                baseClock: 1.110, // GHz
+                boostClock: 1.860, // GHz
+                memory: "48GB GDDR6",
+                memoryBandwidth: 696 // GB/s
+            },
+            "A10": {
+                name: "NVIDIA A10",
+                architecture: "Ampere",
+                cudaCores: 6144,
+                tensorCores: 384,
+                baseClock: 1.350, // GHz
+                boostClock: 1.700, // GHz
+                memory: "24GB GDDR6",
+                memoryBandwidth: 600 // GB/s
+            },
+            "L40S": {
+                name: "NVIDIA L40S",
+                architecture: "Ada Lovelace",
+                cudaCores: 18176,
+                tensorCores: 568,
+                baseClock: 1.350, // GHz
+                boostClock: 2.250, // GHz
+                memory: "48GB GDDR6",
+                memoryBandwidth: 1330 // GB/s
+            },
+            "RTX 4090": {
+                name: "NVIDIA GeForce RTX 4090",
+                architecture: "Ada Lovelace",
+                cudaCores: 16384,
+                tensorCores: 512,
+                baseClock: 2.230, // GHz
+                boostClock: 2.520, // GHz
+                memory: "24GB GDDR6X",
+                memoryBandwidth: 1008 // GB/s
+            },
+            "A800": {
+                name: "NVIDIA A800",
+                architecture: "Ampere",
+                cudaCores: 6912,
+                tensorCores: 432,
+                baseClock: 1.410, // GHz
+                boostClock: 1.700, // GHz
+                memory: "80GB HBM2e",
+                memoryBandwidth: 2039 // GB/s
+            }
+        };
+
+        /**
+         * GPU算力计算器核心逻辑
+         * 实现算力计算、界面交互和图表可视化
+         */
+
+        class GPUCalculator {
+            constructor() {
+                this.gpuData = GPU_DATA;
+                this.barChart = null;
+                this.radarChart = null;
+                this.init();
+            }
+
+            init() {
+                this.populateGPUModels();
+                this.bindEvents();
+            }
+
+            /**
+             * 填充GPU型号复选框
+             */
+            populateGPUModels() {
+                const container = document.getElementById('gpu-models-container');
+                container.innerHTML = '';
+
+                Object.keys(this.gpuData).forEach(key => {
+                    const label = document.createElement('label');
+                    label.className = 'checkbox-item';
+                    label.innerHTML = `
+                        <input type="checkbox" name="gpu" value="${key}" checked>
+                        <span>${this.gpuData[key].name}</span>
+                    `;
+                    container.appendChild(label);
+                });
+            }
+
+            /**
+             * 绑定事件监听器
+             */
+            bindEvents() {
+                document.getElementById('calculate-btn').addEventListener('click', () => {
+                    this.calculateAndDisplay();
+                });
+
+                document.getElementById('compare-btn').addEventListener('click', () => {
+                    this.compareGPUs();
+                });
+
+                document.getElementById('reset-btn').addEventListener('click', () => {
+                    this.reset();
+                });
+
+                // 全选/全不选GPU按钮
+                document.getElementById('select-all-gpus').addEventListener('click', () => {
+                    const checkboxes = document.querySelectorAll('input[name="gpu"]');
+                    checkboxes.forEach(checkbox => checkbox.checked = true);
+                });
+
+                document.getElementById('select-none-gpus').addEventListener('click', () => {
+                    const checkboxes = document.querySelectorAll('input[name="gpu"]');
+                    checkboxes.forEach(checkbox => checkbox.checked = false);
+                });
+
+                // 全选/全不选精度按钮
+                document.getElementById('select-all-precisions').addEventListener('click', () => {
+                    const checkboxes = document.querySelectorAll('input[name="precision"]');
+                    checkboxes.forEach(checkbox => checkbox.checked = true);
+                });
+
+                document.getElementById('select-none-precisions').addEventListener('click', () => {
+                    const checkboxes = document.querySelectorAll('input[name="precision"]');
+                    checkboxes.forEach(checkbox => checkbox.checked = false);
+                });
+            }
+
+            /**
+             * 计算单GPU在各种精度下的算力
+             * @param {string} gpuKey - GPU型号键名
+             * @returns {Object} 包含各种精度算力的对象
+             */
+            calculateGPUPerformance(gpuKey) {
+                const gpu = this.gpuData[gpuKey];
+                if (!gpu) return null;
+
+                const boostClock = gpu.boostClock; // 使用boost clock计算峰值算力
+                const cudaCores = gpu.cudaCores;
+                const tensorCores = gpu.tensorCores;
+                const architecture = gpu.architecture;
+
+                // 基础FP32算力 (TFLOPS)
+                const fp32 = (cudaCores * boostClock * 2) / 1e3;
+
+                // 根据架构计算不同精度的算力
+                let fp64, fp16, bf16, int8, int4;
+
+                switch (architecture) {
+                    case 'Hopper':
+                        fp64 = fp32 / 4;
+                        fp16 = fp32 * 4;
+                        bf16 = fp32 * 4;
+                        int8 = fp32 * 8;
+                        int4 = fp32 * 16;
+                        break;
+                    case 'Ada Lovelace':
+                        fp64 = fp32 / 8; // Ada架构FP64性能较低
+                        fp16 = fp32 * 8;
+                        bf16 = fp32 * 8;
+                        int8 = fp32 * 16;
+                        int4 = fp32 * 32;
+                        break;
+                    case 'Ampere':
+                    default:
+                        fp64 = fp32 / 2;
+                        fp16 = fp32 * 2;
+                        bf16 = fp32 * 2;
+                        int8 = fp32 * 4;
+                        int4 = fp32 * 8;
+                        break;
+                }
+
+                // Tensor Core混合精度算力 (TFLOPS)
+                let tensorFp16 = 0, tensorBf16 = 0, tensorInt8 = 0;
+
+                if (tensorCores > 0) {
+                    switch (architecture) {
+                        case 'Hopper':
+                            // Hopper Tensor Core: 每个周期处理2048个FP16/BF16操作
+                            tensorFp16 = (tensorCores * boostClock * 2048) / 1e6;
+                            tensorBf16 = tensorFp16;
+                            tensorInt8 = (tensorCores * boostClock * 4096) / 1e6;
+                            break;
+                        case 'Ada Lovelace':
+                            // Ada Tensor Core: 每个周期处理1024个FP16/BF16操作
+                            tensorFp16 = (tensorCores * boostClock * 1024) / 1e6;
+                            tensorBf16 = tensorFp16;
+                            tensorInt8 = (tensorCores * boostClock * 2048) / 1e6;
+                            break;
+                        case 'Ampere':
+                        default:
+                            // Ampere Tensor Core: 每个周期处理1024个FP16/BF16操作
+                            tensorFp16 = (tensorCores * boostClock * 1024) / 1e6;
+                            tensorBf16 = tensorFp16;
+                            tensorInt8 = (tensorCores * boostClock * 2048) / 1e6;
+                            break;
+                    }
+                }
+
+                return {
+                    name: gpu.name,
+                    architecture: architecture,
+                    fp32: this.round(fp32),
+                    fp64: this.round(fp64),
+                    fp16: this.round(fp16),
+                    bf16: this.round(bf16),
+                    int8: this.round(int8),
+                    int4: this.round(int4),
+                    tensorFp16: this.round(tensorFp16),
+                    tensorBf16: this.round(tensorBf16),
+                    tensorInt8: this.round(tensorInt8),
+                    memory: gpu.memory,
+                    memoryBandwidth: gpu.memoryBandwidth
+                };
+            }
+
+            /**
+             * 四舍五入到两位小数
+             * @param {number} num - 要四舍五入的数字
+             * @returns {number} 四舍五入后的数字
+             */
+            round(num) {
+                return Math.round(num * 100) / 100;
+            }
+
+            /**
+             * 获取用户选择的GPU型号
+             * @returns {Array} 选中的GPU型号键名数组
+             */
+            getSelectedGPUs() {
+                const checkboxes = document.querySelectorAll('input[name="gpu"]:checked');
+                return Array.from(checkboxes).map(checkbox => checkbox.value);
+            }
+
+            /**
+             * 获取用户选择的计算精度
+             * @returns {Array} 选中的精度类型数组
+             */
+            getSelectedPrecisions() {
+                const checkboxes = document.querySelectorAll('input[name="precision"]:checked');
+                return Array.from(checkboxes).map(checkbox => checkbox.value);
+            }
+
+            /**
+             * 计算并显示结果
+             */
+            calculateAndDisplay() {
+                const selectedGPUs = this.getSelectedGPUs();
+                if (selectedGPUs.length === 0) {
+                    alert('请至少选择一个GPU型号');
+                    return;
+                }
+
+                const results = selectedGPUs.map(gpuKey => {
+                    return this.calculateGPUPerformance(gpuKey);
+                }).filter(result => result !== null);
+
+                this.displayResults(results);
+                this.generateBarChart(results);
+                this.generateRadarChart(results);
+            }
+
+            /**
+             * 显示计算结果卡片
+             * @param {Array} results - 计算结果数组
+             */
+            displayResults(results) {
+                const container = document.getElementById('result-cards');
+                container.innerHTML = '';
+
+                results.forEach(result => {
+                    const card = document.createElement('div');
+                    card.className = 'result-card';
+
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <h3>${result.name}</h3>
+                            <span class="architecture">${result.architecture}架构</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="spec-row">
+                                <span class="label">内存:</span>
+                                <span class="value">${result.memory}</span>
+                            </div>
+                            <div class="spec-row">
+                                <span class="label">内存带宽:</span>
+                                <span class="value">${result.memoryBandwidth} GB/s</span>
+                            </div>
+                            <div class="performance-grid">
+                                <div class="performance-item">
+                                    <span class="precision">FP32</span>
+                                    <span class="value">${result.fp32} TFLOPS</span>
+                                </div>
+                                <div class="performance-item">
+                                    <span class="precision">FP64</span>
+                                    <span class="value">${result.fp64} TFLOPS</span>
+                                </div>
+                                <div class="performance-item">
+                                    <span class="precision">FP16</span>
+                                    <span class="value">${result.fp16} TFLOPS</span>
+                                    ${result.tensorFp16 > 0 ? `<span class="tensor">(${result.tensorFp16} TFLOPS Tensor)</span>` : ''}
+                                </div>
+                                <div class="performance-item">
+                                    <span class="precision">BF16</span>
+                                    <span class="value">${result.bf16} TFLOPS</span>
+                                    ${result.tensorBf16 > 0 ? `<span class="tensor">(${result.tensorBf16} TFLOPS Tensor)</span>` : ''}
+                                </div>
+                                <div class="performance-item">
+                                    <span class="precision">INT8</span>
+                                    <span class="value">${result.int8} TOPS</span>
+                                    ${result.tensorInt8 > 0 ? `<span class="tensor">(${result.tensorInt8} TOPS Tensor)</span>` : ''}
+                                </div>
+                                <div class="performance-item">
+                                    <span class="precision">INT4</span>
+                                    <span class="value">${result.int4} TOPS</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    container.appendChild(card);
+                });
+            }
+
+            /**
+             * 生成柱状图
+             * @param {Array} results - 计算结果数组
+             */
+            generateBarChart(results) {
+                const ctx = document.getElementById('bar-chart').getContext('2d');
+                const selectedPrecisions = this.getSelectedPrecisions();
+
+                // 销毁现有图表
+                if (this.barChart) {
+                    this.barChart.destroy();
+                }
+
+                // 准备图表数据
+                const labels = results.map(result => result.name);
+                const datasets = selectedPrecisions.map(precision => {
+                    const data = results.map(result => result[precision.toLowerCase()]);
+                    const color = this.getPrecisionColor(precision);
+
+                    return {
+                        label: precision,
+                        data: data,
+                        backgroundColor: color + '40', // 半透明
+                        borderColor: color,
+                        borderWidth: 2,
+                        borderRadius: 4
+                    };
+                });
+
+                // 创建柱状图
+                this.barChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: '算力 (TFLOPS/TOPS)'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        if (value >= 1000) {
+                                            return (value / 1000).toFixed(1) + 'k';
+                                        }
+                                        return value;
+                                    }
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'GPU型号'
+                                },
+                                ticks: {
+                                    autoSkip: false,
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    usePointStyle: true,
+                                    boxWidth: 6
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const precision = context.dataset.label;
+                                        const value = context.parsed.y;
+                                        const unit = precision.includes('INT') ? 'TOPS' : 'TFLOPS';
+                                        return `${precision}: ${value} ${unit}`;
+                                    }
+                                }
+                            },
+
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        }
+                    }
+                });
+            }
+
+            /**
+             * 生成雷达图
+             * @param {Array} results - 计算结果数组
+             */
+            generateRadarChart(results) {
+                const ctx = document.getElementById('radar-chart').getContext('2d');
+                const selectedPrecisions = this.getSelectedPrecisions();
+
+                // 销毁现有图表
+                if (this.radarChart) {
+                    this.radarChart.destroy();
+                }
+
+                // 准备图表数据
+                const datasets = results.map(result => {
+                    const data = selectedPrecisions.map(precision => result[precision.toLowerCase()]);
+                    const color = this.getGPUColor(result.name);
+
+                    return {
+                        label: result.name,
+                        data: data,
+                        backgroundColor: color + '20', // 半透明
+                        borderColor: color,
+                        borderWidth: 2,
+                        pointBackgroundColor: color,
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: color
+                    };
+                });
+
+                // 创建雷达图
+                this.radarChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: selectedPrecisions,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: '算力 (TFLOPS/TOPS)'
+                                },
+                                angleLines: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const precision = context.label;
+                                        const value = context.parsed.r;
+                                        const unit = precision.includes('INT') ? 'TOPS' : 'TFLOPS';
+                                        return `${precision}: ${value} ${unit}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            /**
+             * 获取精度对应的颜色
+             * @param {string} precision - 精度类型
+             * @returns {string} 颜色代码
+             */
+            getPrecisionColor(precision) {
+                const colors = {
+                    'FP32': '#36A2EB',
+                    'FP64': '#FF6384',
+                    'FP16': '#FFCE56',
+                    'BF16': '#4BC0C0',
+                    'INT8': '#9966FF',
+                    'INT4': '#FF9F40'
+                };
+                return colors[precision] || '#333';
+            }
+
+            /**
+             * 获取GPU对应的颜色
+             * @param {string} gpuName - GPU名称
+             * @returns {string} 颜色代码
+             */
+            getGPUColor(gpuName) {
+                const colors = [
+                    '#36A2EB', '#FF6384', '#FFCE56', '#4BC0C0',
+                    '#9966FF', '#FF9F40', '#C9CBCF', '#8AC6D1'
+                ];
+                const index = Object.keys(this.gpuData).findIndex(key => this.gpuData[key].name === gpuName);
+                return colors[index % colors.length];
+            }
+
+            /**
+             * 对比选中的GPU
+             */
+            compareGPUs() {
+                this.calculateAndDisplay(); // 对比功能与计算功能类似，只是强调对比
+            }
+
+            /**
+             * 重置界面
+             */
+            reset() {
+                // 重置复选框
+                const gpuCheckboxes = document.querySelectorAll('input[name="gpu"]');
+                gpuCheckboxes.forEach(checkbox => checkbox.checked = true);
+
+                const precisionCheckboxes = document.querySelectorAll('input[name="precision"]');
+                precisionCheckboxes.forEach(checkbox => checkbox.checked = true);
+
+                // 清空结果和图表
+                document.getElementById('result-cards').innerHTML = '';
+                if (this.barChart) {
+                    this.barChart.destroy();
+                    this.barChart = null;
+                }
+                if (this.radarChart) {
+                    this.radarChart.destroy();
+                    this.radarChart = null;
+                }
+            }
+        }
+
+        // 页面加载完成后初始化计算器
+        window.addEventListener('DOMContentLoaded', () => {
+            new GPUCalculator();
+        });
+    </script>
+</body>
+</html>
