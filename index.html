@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NVIDIA GPU 算力计算器</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>NVIDIA GPU 算力计算器</h1>
+            <p>计算和对比不同NVIDIA GPU型号在各种精度下的算力</p>
+        </header>
+
+        <main>
+            <section class="controls">
+                <div class="control-group">
+                    <label for="gpu-select">选择GPU型号:</label>
+                    <select id="gpu-select">
+                        <!-- 动态填充GPU型号 -->
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="precision-select">选择计算精度:</label>
+                    <select id="precision-select">
+                        <option value="FP32">FP32 (单精度)</option>
+                        <option value="FP64">FP64 (双精度)</option>
+                        <option value="FP16">FP16 (半精度)</option>
+                        <option value="BF16">BF16 (脑浮点数)</option>
+                        <option value="INT8">INT8 (8位整数)</option>
+                        <option value="INT4">INT4 (4位整数)</option>
+                    </select>
+                </div>
+                <button id="calculate-btn" class="btn-primary">计算算力</button>
+                <button id="compare-btn" class="btn-secondary">对比选中GPU</button>
+                <button id="clear-compare-btn" class="btn-secondary">清除对比列表</button>
+            </section>
+
+            <section class="results">
+                <div class="result-card">
+                    <h2>当前GPU算力</h2>
+                    <div id="current-result">
+                        <p>请选择GPU型号并点击计算按钮</p>
+                    </div>
+                </div>
+
+                <div class="compare-list">
+                    <h2>对比列表</h2>
+                    <div id="compare-items">
+                        <p>暂无对比项，请添加GPU进行对比</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="charts">
+                <div class="chart-container">
+                    <h3>不同精度算力对比 (柱状图)</h3>
+                    <canvas id="bar-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>算力分布对比 (雷达图)</h3>
+                    <canvas id="radar-chart"></canvas>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
